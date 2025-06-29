@@ -15,11 +15,11 @@ class ThrivepetcareComSpider(scrapy.Spider):
 
     available_dates_url_pattern = "https://www.thrivepetcare.com/api/booking/v1/locations/{location_id}/available-dates?appointmentTypeId={appointment_type_id}"
 
-    providers_url_pattern = "https://www.thrivepetcare.com/api/booking/v1/locations/{location_id}/providers-schedule?selectedDate={date}&onlyActive=true&vetOnly=true&&appointmentTypeId={appointment_type_id}"
+    providers_url_pattern = "https://www.thrivepetcare.com/api/booking/v1/locations/{location_id}/providers-schedule?selectedDate={date}&onlyActive=true&vetOnly=true&appointmentTypeId={appointment_type_id}"
 
     time_slots_url_pattern = "https://www.thrivepetcare.com/api/booking/v2/{location_id}/availabletimes/{appointment_type_id}/{date}?providerId={provider_id}"
 
-    item_url_pattern = "https://www.thrivepetcare.com/unified-website-booking?locationId={location_id}&appointmentType={appointment_type}&appointmentTypeId={appointment_type_id}&date={date}&step=selectAppointmentTime"
+    location_url = "https://www.thrivepetcare.com/locations/{state}/{city}/{name}"
 
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36',
@@ -50,6 +50,8 @@ class ThrivepetcareComSpider(scrapy.Spider):
 
             item['address'] = address
             item['location'] = location['locationName']
+            item['link'] = self.location_url.format(state=location.get('state'), city=location.get('city'),
+                                                    name=location.get('locationName').lower().replace(" ", "-"))
 
             yield scrapy.Request(url=self.appointment_types_url_pattern.format(location_id=location['locationId']),
                                  callback=self.parse_appointment_types,
@@ -101,10 +103,6 @@ class ThrivepetcareComSpider(scrapy.Spider):
 
         for provider in providers:
             item['doctor_name'] = provider["name"]
-            item['link'] = self.item_url_pattern.format(location_id=response.meta['location_id'],
-                                                        appointment_type=quote_plus(item['appointment_type']),
-                                                        appointment_type_id=response.meta['appointment_type_id'],
-                                                        date=item['date'])
 
             url = self.time_slots_url_pattern.format(location_id=response.meta['location_id'],
                                                      appointment_type_id=response.meta['appointment_type_id'],
@@ -119,6 +117,7 @@ class ThrivepetcareComSpider(scrapy.Spider):
         item = response.meta['item']
 
         times = jmespath.search('[?status==`Available`].time', jmes)
-        for time in times:
-            item['time_slots'] = time
-            yield item
+        item['time_slots'] = times
+        item['available_slots_count'] = len(times)
+        yield item
+

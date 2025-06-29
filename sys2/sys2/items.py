@@ -7,12 +7,12 @@ import scrapy
 
 class AppointmentItem(scrapy.Item):
     address = scrapy.Field()
+    available_slots_count = scrapy.Field()
     appointment_type = scrapy.Field()
     doctor_name = scrapy.Field()
     date = scrapy.Field()
     location = scrapy.Field()
     time_slots = scrapy.Field()
-    available_slots_count = scrapy.Field()
     link = scrapy.Field()
 
 
