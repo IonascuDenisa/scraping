@@ -4,7 +4,7 @@ from copy import deepcopy
 import scrapy
 import jmespath
 from ..items import AppointmentItem
-from urllib.parse import quote_plus
+
 
 class ThrivepetcareComSpider(scrapy.Spider):
     name = "thrivepetcare.com"
@@ -38,7 +38,7 @@ class ThrivepetcareComSpider(scrapy.Spider):
 
         locations = jmespath.search('props.pageProps.groupedLocations[].locationByStateAndCity[].locations[]', jmes)
 
-        for location in locations:
+        for location in locations[:10]:
             item = AppointmentItem()
 
             address = ', '.join(filter(None, [
@@ -58,7 +58,7 @@ class ThrivepetcareComSpider(scrapy.Spider):
                                  headers=self.headers,
                                  meta={'item': deepcopy(item)})
 
-    def parse_appointment_types(self, response, **kwargs):
+    def parse_appointment_types(self, response):
         jmes = response.json()
         item = response.meta['item']
 
@@ -120,4 +120,3 @@ class ThrivepetcareComSpider(scrapy.Spider):
         item['time_slots'] = times
         item['available_slots_count'] = len(times)
         yield item
-
