@@ -90,5 +90,64 @@ For example:
 - "Wellness" appointments may be scheduled every 15 minutes<br>
 This means that the structure and number of time slots per day differ depending on the type of visit being scheduled.
 
+## 🛠 Implementation Notes
 
+I started by testing various free US-based proxy providers to bypass the IP blocking issue encountered during initial access. Once stable access to the site was achieved, I proceeded with implementing the scraping logic described above.
+
+After confirming that all necessary data could be retrieved through the spider, I defined a custom item class called `AppointmentItem`, which holds the following fields:
+
+- `address`: full address of the medical center
+- `available_slots_count`: number of available time slots for a given doctor and date
+- `appointment_type`: name of the appointment category (e.g., Wellness Visit)
+- `doctor_name`: name of the available provider
+- `date`: date of availability (string format)
+- `location`: name of the medical center
+- `time_slots`: list of available time strings (e.g., {'from': '03:00', 'to': '03:15'})
+- `link`: URL of the medical center's webpage
+
+Each of these fields is populated step by step across the spider's methods, and the partially filled `AppointmentItem` is passed between requests via the `meta` attribute.
+
+Some values required by the API (such as `location_id`, `appointment_type_id`, `provider_id`) are internal identifiers not relevant for the final dataset. These values are still passed forward between requests using `meta`, rather than being stored in the item.
+
+Since all the requests involved in the scraping process are `GET` requests, those identifiers could also be extracted from the `response.url`
+
+### 🧹 Post-Processing: Item Filtering
+
+There are cases where a doctor is listed for a specific date but has no available time slots. As a result, some items may have:
+
+- `available_slots_count = 0`
+- an empty `time_slots` list
+
+To ensure only meaningful appointment data is collected, I implemented a custom Scrapy pipeline that drops any item missing the following:
+
+- `date`
+- `time_slots` (must not be empty)
+- `available_slots_count` (must be > 0)
+
+This filtering step ensures that the final dataset includes only doctors with at least one available appointment on a valid date, making the output cleaner and more useful for downstream analysis.
+
+## ⏱️ Performance Notes & Output
+The initial dataset contains a total of **369 locations**, but for testing purposes, the spider was configured to crawl only the **first 10 locations**.
+
+- 📦 **Items scraped**: 472  
+- 🗑️ **Items dropped** : 204  
+- 500 Internal Server Error: 32
+
+
+## ⚙️ Performance Optimization
+On the first runs, the spider completed in approximately **5 minutes** for 10 locations. To reduce runtime and improve throughput, the following Scrapy settings were applied:
+
+```python
+CONCURRENT_REQUESTS = 32
+CONCURRENT_REQUESTS_PER_DOMAIN = 32
+DOWNLOAD_DELAY = 0.1
+```
+These changes significantly improved performance:
+
+🕒 New runtime: ~1 minute for 10 locations
+
+## 💾 Exporting Data
+To export the scraped data in CSV format, run the spider with:
+```bash
+scrapy crawl thrivepetcare.com -o output_10.csv
 
