@@ -22,7 +22,6 @@ class ThrivepetcareComSpider(scrapy.Spider):
         yield scrapy.Request(
             url=self.start_urls[0],
             headers=self.headers,
-            meta={'proxy': 'https://161.35.98.111:8080'},
             callback=self.parse
         )
 
@@ -36,7 +35,7 @@ class ThrivepetcareComSpider(scrapy.Spider):
         for location in location_ids:
             yield scrapy.Request(url=self.appointment_types_url_pattern.format(id=location),
                                  callback=self.parse_location_types, headers=self.headers,
-                                 meta={'proxy': 'https://161.35.98.111:8080', 'location_id': location}, )
+                                 meta={'location_id': location}, )
 
     def parse_location_types(self, response, **kwargs):
         jmes = response.json()
@@ -48,8 +47,7 @@ class ThrivepetcareComSpider(scrapy.Spider):
             yield scrapy.Request(
                 url=url,
                 callback=self.parse_available_dates, headers=self.headers,
-                meta={'proxy': 'https://161.35.98.111:8080',
-                      'location_id': response.meta['location_id'],
+                meta={ 'location_id': response.meta['location_id'],
                       "appointment_type": appointment_type}, )
 
     def parse_available_dates(self, response):
@@ -63,8 +61,7 @@ class ThrivepetcareComSpider(scrapy.Spider):
                     location=response.meta['location_id'], date=date)
                 yield scrapy.Request(url=url,
                                      callback=self.parse_providers, headers=self.headers,
-                                     meta={'proxy': 'https://161.35.98.111:8080',
-                                           'location_id': response.meta['location_id'],
+                                     meta={'location_id': response.meta['location_id'],
                                            'appointment_type': response.meta['appointment_type'], 'date': date})
 
     def parse_providers(self, response):
@@ -78,8 +75,7 @@ class ThrivepetcareComSpider(scrapy.Spider):
                     location_id=response.meta['location_id'], ap_type=response.meta['appointment_type'],
                     date=response.meta['date'], provider_id=provider)
                 yield scrapy.Request(url=url,
-                                     callback=self.parse_times, headers=self.headers,
-                                     meta={'proxy': 'https://161.35.98.111:8080'})
+                                     callback=self.parse_times, headers=self.headers,)
 
     def parse_times(self, response):
         jmes = response.json()

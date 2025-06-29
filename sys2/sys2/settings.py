@@ -52,9 +52,13 @@ ROBOTSTXT_OBEY = True
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    "sys2.middlewares.Sys2DownloaderMiddleware": 543,
-#}
+DOWNLOADER_MIDDLEWARES = {
+   # "sys2.middlewares.Sys2DownloaderMiddleware": 543,
+    "sys2.middlewares.CustomProxyMiddleware": 350,
+}
+
+# include your proxy address
+PROXY_ADDRESS = "https://161.35.98.111:8080"
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
